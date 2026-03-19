@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { act, use, useEffect, useMemo, useState } from "react";
 import { createClientBrowser } from "@/lib/supabase/client";
 
 type ProductRow = {
@@ -59,6 +59,12 @@ export default function AdminDashboard() {
 
   const [recent, setRecent] = useState<ProductRow[]>([]);
 
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState("");
+  const [discountExpiry, setDiscountExpiry] = useState("");
+  const [discountStatus, setDiscountStatus] = useState("");
+  const [discountCodes, setDiscountCodes] = useState<any[]>([]);
+
   const resolvedGenre = useMemo(() => {
     if (genreSelect === "Other") return customGenre.trim();
     return genreSelect.trim();
@@ -74,7 +80,39 @@ export default function AdminDashboard() {
     if (!error && data) setRecent(data as ProductRow[]);
   }
 
-  useEffect(() => {
+async function loadDiscountCodes() {
+    const { data, error } = await supabase
+      .from("discount_codes")
+      .select("*")
+      .order("code", { ascending: true });
+  if (!error && data) setDiscountCodes(data);
+  }
+  async function addDiscountCode(e: React.SyntheticEvent) {
+   e.preventDefault();
+    if (!discountCode.trim()) return setDiscountStatus("Code is required.");
+    const pct = Number(discountPercent);
+    if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return setDiscountStatus("Percentage must be a valid number > 0 and < 100.");
+  
+    const { error } = await supabase.from("discount_codes").insert({
+      code: discountCode.trim().toUpperCase(),
+      percentage: pct,
+      active: true,
+      expires_at: discountExpiry || null,
+    });
+
+    if (error) return setDiscountStatus(` :( ${error.message}`);
+    setDiscountStatus(":D Discount code added!");
+    setDiscountCode("");
+    setDiscountPercent("");
+    setDiscountExpiry("");
+    await loadDiscountCodes();
+  }
+  async function toggleDiscountCode(code: string, currentlyActive: boolean) {
+    await supabase.from("discount_codes").update({ active: !currentlyActive }).eq("code", code);
+    await loadDiscountCodes();
+  }
+  
+    useEffect(() => {
     (async () => {
       const { data: userRes } = await supabase.auth.getUser();
       const userEmail = userRes.user?.email ?? null;
@@ -84,7 +122,6 @@ export default function AdminDashboard() {
         window.location.assign("/admin/login");
         return;
       }
-
       const { data, error } = await supabase
         .from("admins")
         .select("email")
@@ -95,7 +132,10 @@ export default function AdminDashboard() {
       setIsAdmin(ok);
       setLoading(false);
 
-      if (ok) await loadRecent();
+      if (ok){ 
+        await loadRecent();
+        await loadDiscountCodes();    
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -331,7 +371,81 @@ export default function AdminDashboard() {
           </div>
         ) : null}
       </div>
+      {/* Discount Codes */}
+      <div className="border-4 border-black p-5 bg-[#3D2F3F] space-y-4 shadow-[8px_8px_0_0_#000]">
+        <h2 className="text-lg font-black uppercase">Manage Discount Codes</h2>
 
+        <form onSubmit={addDiscountCode} className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <div className="text-xs font-black uppercase tracking-widest">Code</div>
+              <input
+                className="w-full border-2 border-black rounded-sm p-2 bg-white"
+                placeholder="e.g. VINYL10"
+                value={discountCode}
+                onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-black uppercase tracking-widest">Percentage OFF</div>
+              <input
+                className="w-full border-2 border-black rounded-sm p-2 bg-white"
+                placeholder="10"
+                inputMode="numeric"
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-black uppercase tracking-widest">Expires At</div>
+              <input
+                className="w-full border-2 border-black rounded-sm p-2 bg-white"
+                type="date"
+                value={discountExpiry}
+                onChange={(e) => setDiscountExpiry(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <button
+           className="w-full sm:w-auto rounded-sm border-2 border-black bg-black text-[#F7E8D6] px-4 py-2 font-black uppercase tracking-widest shadow-[6px_6px_0_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[10px_10px_0_0_#000]"
+          >
+            Add Discount Code
+          </button>
+        </form>
+      {discountStatus ? (
+          <div className="text-sm border-2 border-black bg-white p-3 font-semibold">
+            {discountStatus}
+          </div>
+        ) : null}
+      
+      {/* List of existing codes */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-black uppercase">Existing Codes</h3>
+        {discountCodes.length === 0 ? (
+          <div className="border-2 border-black p-3 bg-white text-sm">No discount codes yet.</div>
+        ) : (  
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {discountCodes.map((dc) => (
+              <div key={dc.code} className="border-2 border-black p-3 bg-white flex items-center justify-between">
+                <div>
+                  <div className="font-black uppercase">{dc.code}</div>
+                  <div className="text-xs opacity-70">{dc.percentage}% off{dc.expires_at ? `, expires ${dc.expires_at.slice(0, 10)}` : ""}</div>
+                </div>
+                <button
+                  onClick={() => toggleDiscountCode(dc.code, dc.active)}
+                  className={`text-xs font-black uppercase border-2 border-black px-2 py-1 ${dc.active ? "bg-[#2EC4B6]" : "bg-[#FFD6A5]"}`}
+                >
+                  {dc.active ? "Active" : "Inactive"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      </div>
       {/* Recent Products */}
       <div className="space-y-3">
         <h2 className="text-lg font-black uppercase">Recently Added (Products)</h2>
