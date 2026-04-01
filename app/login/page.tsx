@@ -1,16 +1,36 @@
 "use client"
 
-import { log } from 'console';
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from 'next/link';
+import { createClientBrowser } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const supabase = createClientBrowser();
 
-  async function login() {
-    console.log("Login pressed with email:", email, "and password:", password);
-    // TODO: Implement login logic here, validation, etc
+  async function login(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(false);
+    router.push("/");
   }
 
   return (
@@ -18,10 +38,11 @@ export default function LoginPage() {
       <h1 className="text-4xl font-black uppercase tracking-tight text-center mb-8">Login</h1>
       <form className="space-y-3" onSubmit={login}>
         <div className="w-full max-w-sm mx-auto space-y-6 border-4 border-black p-8 bg-[#F7E8D6]">
+          {error && <p className="text-red-600 text-sm">{error}</p>}
           <input
             className="w-full border-2 border-black rounded p-2 bg-white"
             onChange={(e) => setEmail(e.target.value)}
-            defaultValue={email}
+            value={email}
             placeholder="Email"
             type="email"
             required
@@ -29,18 +50,18 @@ export default function LoginPage() {
           <input
             className="w-full border-2 border-black rounded p-2 bg-white"
             onChange={(e) => setPassword(e.target.value)}
-            defaultValue={password}
+            value={password}
             placeholder="Password"
             type="password"
             required
           />
           <button
-            className="group w-full bg-black text-white py-2 rounded hover:bg-stone-800"
+            className="group w-full bg-black text-white py-2 rounded hover:bg-stone-800 disabled:opacity-50"
             type="submit"
-            onClick={login}
+            disabled={loading}
           >
             <span className="relative">
-              Log In
+              {loading ? "Logging In..." : "Log In"}
               <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-current transition-all duration-150 group-hover:w-full" />
             </span>
           </button>
