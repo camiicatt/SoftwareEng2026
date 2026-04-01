@@ -94,12 +94,6 @@ export default function RootLayout({
                       </span>
                     </Link>
                   ))}
-
-                  <div className="ml-auto hidden md:block">
-                    <div className="rounded-sm border-2 border-black bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-black shadow-[5px_5px_0_0_#000]">
-                      Sunset Drop
-                    </div>
-                  </div>
                 </div>
               </nav>
             </div>
