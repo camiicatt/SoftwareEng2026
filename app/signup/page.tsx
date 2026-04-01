@@ -9,6 +9,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
+  const [isChecked, setIsChecked] = useState(false);
 
   async function signUp() {
     console.log("Sign Up pressed with first name:", firstName, "last name:", lastName, "email:", email, "phone number:", phoneNumber, "and password:", password);
@@ -70,6 +71,14 @@ export default function SignupPage() {
               <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-current transition-all duration-150 group-hover:w-full" />
             </span>
           </button>
+          <label className="mt-2 text-sm font-semibold text-black/70 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={(e) => setIsChecked(e.target.checked)}
+            />
+              I want to receive updates and promotions via email.
+          </label>
           <p className="mt-2 text-sm font-semibold text-black/70">
             Save your cart and manage your orders by creating an account.
           </p>
