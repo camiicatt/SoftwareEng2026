@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Providers from "@/app/provider/Providers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
@@ -40,6 +41,7 @@ export default function RootLayout({
           "text-[#1f1f1f]",
         ].join(" ")}
       >
+      <Providers>
         <header className="sticky top-0 z-50 w-full">
           <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-[#FFF3E6]" />
           <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 opacity-[0.12] [background-image:linear-gradient(#000_1px,transparent_1px),linear-gradient(90deg,#000_1px,transparent_1px)] [background-size:28px_28px]" />
@@ -101,6 +103,7 @@ export default function RootLayout({
         </header>
 
         <main className="mx-auto max-w-6xl px-5 pb-16">{children}</main>
+      </Providers>
       </body>
     </html>
   );

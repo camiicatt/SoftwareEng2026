@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../../database/db.js");
+const { createClient } = require("@supabase/supabase-js");
 
 const TAX_RATE = 0.08; // 8% tax
 
@@ -123,17 +124,50 @@ router.post("/calculate", async (req, res) => {
 });
 
 router.post("/placeOrder", async (req, res) => {
-    const { items, discountCode, status, user_id } = req.body;
+    const { items, discountCode, status } = req.body;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "No authorization token" });
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Items must be a non-empty array" });
     }
 
+    const token = authHeader.replace("Bearer ", "");
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        {
+            global: {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            },
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false,
+            },
+        }
+    );
+
     try {
+        const {
+            data: { user },
+            error: authError,
+        } = await supabase.auth.getUser(token);
+
+        if (authError || !user) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const user_id = user.id;
         let discountPercent = 0;
 
         if (discountCode) {
-            const { data, error } = await db.supabase
+            const { data, error } = await supabase
                 .from("discount_codes")
                 .select("percentage, expires_at")
                 .eq("code", discountCode)
@@ -157,7 +191,7 @@ router.post("/placeOrder", async (req, res) => {
 
         const totals = calculateOrderTotal(items, discountPercent);
 
-        const { data: order, error: orderError } = await db.supabase
+        const { data: order, error: orderError } = await supabase
             .from("orders")
             .insert([
                 {
@@ -182,7 +216,7 @@ router.post("/placeOrder", async (req, res) => {
             price_at_purchase: item.price_at_purchase,
         }));
 
-        const { error: itemsError } = await db.supabase
+        const { error: itemsError } = await supabase
             .from("order_items")
             .insert(orderItems);
 
