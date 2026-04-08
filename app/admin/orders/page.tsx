@@ -46,11 +46,13 @@ export default function AdminOrdersPage() {
     })();
   }, []);
 
-  async function loadOrders(field: string) {
+ async function loadOrders(field: string) {
     setLoading(true);
-    const res = await fetch(`http://localhost:5000/orders/sort/${field}`);
-    const data = await res.json();
-    setOrders(data);
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .order(field, { ascending: field !== "total_price" ? false : true });
+    if (!error && data) setOrders(data as Order[]);
     setLoading(false);
   }
 
