@@ -85,12 +85,6 @@ export default function AdminLoginPage() {
     setBusy(false);
   }
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    setStatus("Signed out.");
-    setUserEmail(null);
-  }
-
   // If already logged in, show the direct button
   if (userEmail) {
     return (
@@ -107,12 +101,6 @@ export default function AdminLoginPage() {
             >
               Go to Admin
             </a>
-            <button
-              onClick={signOut}
-              className="inline-flex items-center rounded border-2 border-black px-4 py-2"
-            >
-              Sign out
-            </button>
           </div>
 
           {status ? (
@@ -130,7 +118,7 @@ export default function AdminLoginPage() {
 
         <form className="space-y-3" onSubmit={signIn}>
           <input
-            className="w-full border-2 border-black rounded p-2"
+            className="w-full border-2 border-black rounded p-2 bg-white"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="admin@example.com"
@@ -138,7 +126,7 @@ export default function AdminLoginPage() {
             required
           />
           <input
-            className="w-full border-2 border-black rounded p-2"
+            className="w-full border-2 border-black rounded p-2 bg-white"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="password"
@@ -149,18 +137,24 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded bg-black text-white p-2 disabled:opacity-60"
+            className="group w-full rounded bg-black text-white p-2 hover:bg-stone-800 disabled:opacity-50"
           >
-            {busy ? "Signing in…" : "Sign in"}
+            <span className="relative">
+              {busy ? "Signing in..." : "Sign in"}
+              <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-current transition-all duration-150 group-hover:w-full" />
+            </span>
           </button>
 
           <button
             type="button"
             onClick={signUp}
             disabled={busy}
-            className="w-full rounded border-2 border-black p-2 disabled:opacity-60"
+            className="group w-full rounded border-2 border-black p-2 text-center inline-block bg-[#F2D23C] hover:bg-[#EDDB7E] disabled:opacity-50"
           >
-            Create account
+            <span className="relative">
+              Create account
+              <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-current transition-all duration-150 group-hover:w-full" />
+            </span>
           </button>
         </form>
 
