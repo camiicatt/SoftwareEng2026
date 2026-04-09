@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useCart } from "@/app/context/cartContext";
 import Link from "next/link";
 
 type RawProduct = any;
@@ -47,7 +48,7 @@ function badgeStyle(qty: number) {
   return "bg-[#2EC4B6] text-neutral-950 border-neutral-950";
 }
 
-function ProductCard({ p }: { p: Product }) {
+function ProductCard({ p, onAddToCart  }: { p: Product; onAddToCart: (product: Product) => void; }) {
   return (
     <article className="group relative overflow-hidden rounded-3xl border border-black/10 bg-white/70 shadow-[0_12px_30px_rgba(0,0,0,0.10)] backdrop-blur transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(0,0,0,0.14)]">
       {/* status badge */}
@@ -122,6 +123,7 @@ function ProductCard({ p }: { p: Product }) {
 
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button
+            onClick={() => onAddToCart(p)}
             disabled={p.quantity <= 0}
             className="rounded-2xl border border-black/10 bg-neutral-950 px-3 py-2 text-sm font-black uppercase tracking-wide text-white shadow-[0_10px_24px_rgba(0,0,0,0.18)] transition-all hover:-translate-y-0.5 hover:bg-black disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500 disabled:shadow-none"
           >
@@ -144,6 +146,7 @@ function ProductCard({ p }: { p: Product }) {
 }
 
 export default function ProductsClient() {
+    const { addToCart } = useCart();
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -342,7 +345,7 @@ export default function ProductsClient() {
         {/* grid */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-5">
           {items.map((p) => (
-            <ProductCard key={String(p.id)} p={p} />
+            <ProductCard key={String(p.id)} p={p} onAddToCart={addToCart}  />
           ))}
         </div>
 
