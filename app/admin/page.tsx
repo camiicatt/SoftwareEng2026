@@ -233,6 +233,9 @@ async function loadDiscountCodes() {
         <a className="underline underline-offset-4" href="/products">
           View store
         </a>
+      <a className="underline underline-offset-4" href="/admin/orders">
+  View orders
+</a>
       </div>
 
       {/* Add Vinyl Form */}
