@@ -3,6 +3,7 @@ import Providers from "@/app/provider/Providers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
+import AccountButton from "./components/AccountButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -70,13 +71,7 @@ export default function RootLayout({
                   >
                     Cart
                   </Link>
-
-                  <Link
-                    href="/login"
-                    className="inline-flex items-center rounded-sm border-2 border-black bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-black shadow-[5px_5px_0_0_#000] transition-all duration-150 hover:-translate-y-0.5 hover:bg-[#FFD6A5]"
-                  >
-                    Login | Create Account
-                  </Link>
+                  <AccountButton />
 
                 </div>
               </div>
