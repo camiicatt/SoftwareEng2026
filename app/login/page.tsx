@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClientBrowser } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -92,38 +93,13 @@ export default function LoginPage() {
         setIsAdmin(false);
         setUserEmail(signedInEmail);
         setStatus("All logged in! Check out our storefront to start buying albums.");
-        window.location.assign("/storefront");
+        window.location.assign("/");
       }
     } catch (err: any) {
       setStatus(err?.message ?? "Sign-in failed");
     } finally {
       setBusy(false);
     }
-  }
-
-  async function signUp() {
-    if (busy) return;
-
-    setBusy(true);
-    setStatus("");
-
-    const { error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    });
-
-    if (error) {
-      if (error.message.toLowerCase().includes("already")) {
-        setStatus("Account already exists. Use Sign in.");
-      } else {
-        setStatus(`Sign up failed: ${error.message}`);
-      }
-      setBusy(false);
-      return;
-    }
-
-    setStatus("Account created. Now click Sign in.");
-    setBusy(false);
   }
 
   async function signOut() {
@@ -181,7 +157,7 @@ export default function LoginPage() {
 
         <form className="space-y-3" onSubmit={signIn}>
           <input
-            className="w-full border-2 border-black rounded p-2"
+            className="w-full border-2 border-black rounded p-2 bg-white"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="email@example.com"
@@ -189,7 +165,7 @@ export default function LoginPage() {
             required
           />
           <input
-            className="w-full border-2 border-black rounded p-2"
+            className="w-full border-2 border-black rounded p-2 bg-white"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="password"
@@ -200,19 +176,23 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded bg-black text-white p-2 disabled:opacity-60"
+            className="group w-full rounded bg-black text-white p-2 hover:bg-stone-800 disabled:opacity-50"
           >
-            {busy ? "Signing in..." : "Sign in"}
+            <span className="relative">
+              {busy ? "Signing in..." : "Sign in"}
+              <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-current transition-all duration-150 group-hover:w-full" />
+            </span>
           </button>
 
-          <button
-            type="button"
-            onClick={signUp}
-            disabled={busy}
-            className="w-full rounded border-2 border-black p-2 disabled:opacity-60"
+          <Link
+            href="/signup"
+            className="group w-full rounded border-2 border-black p-2 text-center inline-block bg-[#F2D23C] hover:bg-[#EDDB7E] disabled:opacity-50"
           >
-            Create account
-          </button>
+            <span className="relative">
+              Create account
+              <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-current transition-all duration-150 group-hover:w-full" />
+            </span>
+          </Link>
         </form>
 
         {status ? (
