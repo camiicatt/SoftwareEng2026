@@ -105,8 +105,26 @@ export default function AdminCustomersPage() {
         const validationErrors = validateCustomer(editedCustomer);
         setErrors(validationErrors);
 
-        if (Object.keys(validationErrors).length > 0) {
-            return;
+        if (Object.keys(validationErrors).length > 0) return;
+
+        if (editedCustomer.email !== undefined) {
+            const res = await fetch("/api/update-customer-email", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    userId: editingId,
+                    newEmail: editedCustomer.email,
+                }),
+            });
+
+            const result = await res.json();
+
+            if (!res.ok) {
+                alert(result.error || "Email update failed");
+                return;
+            }
         }
 
         const updates: Partial<Customer> = {};
@@ -115,28 +133,20 @@ export default function AdminCustomersPage() {
             updates.full_name = editedCustomer.full_name;
         }
 
-        if (editedCustomer.email !== undefined) {
-            updates.email = editedCustomer.email;
-        }
-
         if (editedCustomer.marketing_opt_in !== undefined) {
             updates.marketing_opt_in = editedCustomer.marketing_opt_in;
         }
 
-        if (Object.keys(updates).length === 0) {
-            alert("No changes to save");
-            return;
-        }
+        if (Object.keys(updates).length > 0) {
+            const { error } = await supabase
+                .from("customers")
+                .update(updates as any)
+                .eq("id", editingId);
 
-        const { error } = await supabase
-            .from("customers")
-            .update(updates as any)
-            .eq("id", editingId);
-
-        if (error) {
-            console.error(error);
-            alert("Update failed");
-            return;
+            if (error) {
+                alert("Update failed");
+                return;
+            }
         }
 
         await loadCustomers(sortField);
