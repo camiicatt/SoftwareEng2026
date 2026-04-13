@@ -80,19 +80,19 @@ export default function AdminDashboard() {
     if (!error && data) setRecent(data as ProductRow[]);
   }
 
-async function loadDiscountCodes() {
+  async function loadDiscountCodes() {
     const { data, error } = await supabase
       .from("discount_codes")
       .select("*")
       .order("code", { ascending: true });
-  if (!error && data) setDiscountCodes(data);
+    if (!error && data) setDiscountCodes(data);
   }
   async function addDiscountCode(e: React.SyntheticEvent) {
-   e.preventDefault();
+    e.preventDefault();
     if (!discountCode.trim()) return setDiscountStatus("Code is required.");
     const pct = Number(discountPercent);
     if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return setDiscountStatus("Percentage must be a valid number > 0 and < 100.");
-  
+
     const { error } = await supabase.from("discount_codes").insert({
       code: discountCode.trim().toUpperCase(),
       percentage: pct,
@@ -111,8 +111,8 @@ async function loadDiscountCodes() {
     await supabase.from("discount_codes").update({ active: !currentlyActive }).eq("code", code);
     await loadDiscountCodes();
   }
-  
-    useEffect(() => {
+
+  useEffect(() => {
     (async () => {
       const { data: userRes } = await supabase.auth.getUser();
       const userEmail = userRes.user?.email ?? null;
@@ -132,9 +132,9 @@ async function loadDiscountCodes() {
       setIsAdmin(ok);
       setLoading(false);
 
-      if (ok){ 
+      if (ok) {
         await loadRecent();
-        await loadDiscountCodes();    
+        await loadDiscountCodes();
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -233,9 +233,12 @@ async function loadDiscountCodes() {
         <a className="underline underline-offset-4" href="/products">
           View store
         </a>
-      <a className="underline underline-offset-4" href="/admin/orders">
-  View orders
-</a>
+        <a className="underline underline-offset-4" href="/admin/customers">
+          View accounts
+        </a>
+        <a className="underline underline-offset-4" href="/admin/orders">
+          View orders
+        </a>
       </div>
 
       {/* Add Vinyl Form */}
@@ -413,41 +416,41 @@ async function loadDiscountCodes() {
           </div>
 
           <button
-           className="w-full sm:w-auto rounded-sm border-2 border-black bg-black text-[#F7E8D6] px-4 py-2 font-black uppercase tracking-widest shadow-[6px_6px_0_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[10px_10px_0_0_#000]"
+            className="w-full sm:w-auto rounded-sm border-2 border-black bg-black text-[#F7E8D6] px-4 py-2 font-black uppercase tracking-widest shadow-[6px_6px_0_0_#000] transition-all hover:-translate-y-0.5 hover:shadow-[10px_10px_0_0_#000]"
           >
             Add Discount Code
           </button>
         </form>
-      {discountStatus ? (
+        {discountStatus ? (
           <div className="text-sm border-2 border-black bg-white p-3 font-semibold">
             {discountStatus}
           </div>
         ) : null}
-      
-      {/* List of existing codes */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-black uppercase">Existing Codes</h3>
-        {discountCodes.length === 0 ? (
-          <div className="border-2 border-black p-3 bg-white text-sm">No discount codes yet.</div>
-        ) : (  
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {discountCodes.map((dc) => (
-              <div key={dc.code} className="border-2 border-black p-3 bg-white flex items-center justify-between">
-                <div>
-                  <div className="font-black uppercase">{dc.code}</div>
-                  <div className="text-xs opacity-70">{dc.percentage}% off{dc.expires_at ? `, expires ${dc.expires_at.slice(0, 10)}` : ""}</div>
+
+        {/* List of existing codes */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-black uppercase">Existing Codes</h3>
+          {discountCodes.length === 0 ? (
+            <div className="border-2 border-black p-3 bg-white text-sm">No discount codes yet.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {discountCodes.map((dc) => (
+                <div key={dc.code} className="border-2 border-black p-3 bg-white flex items-center justify-between">
+                  <div>
+                    <div className="font-black uppercase">{dc.code}</div>
+                    <div className="text-xs opacity-70">{dc.percentage}% off{dc.expires_at ? `, expires ${dc.expires_at.slice(0, 10)}` : ""}</div>
+                  </div>
+                  <button
+                    onClick={() => toggleDiscountCode(dc.code, dc.active)}
+                    className={`text-xs font-black uppercase border-2 border-black px-2 py-1 ${dc.active ? "bg-[#2EC4B6]" : "bg-[#FFD6A5]"}`}
+                  >
+                    {dc.active ? "Active" : "Inactive"}
+                  </button>
                 </div>
-                <button
-                  onClick={() => toggleDiscountCode(dc.code, dc.active)}
-                  className={`text-xs font-black uppercase border-2 border-black px-2 py-1 ${dc.active ? "bg-[#2EC4B6]" : "bg-[#FFD6A5]"}`}
-                >
-                  {dc.active ? "Active" : "Inactive"}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       {/* Recent Products */}
       <div className="space-y-3">
