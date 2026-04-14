@@ -230,14 +230,18 @@ export default function AdminDashboard() {
           <h1 className="text-2xl font-black uppercase">Admin Dashboard</h1>
           <p className="text-sm opacity-80">Signed in as: {email}</p>
         </div>
-        <a className="underline underline-offset-4" href="/products">
+        <a className="border-2 border-black px-4 py-2 text-xs font-black uppercase hover:bg-black hover:text-white" href="/shop">
           View store
         </a>
-        <a className="underline underline-offset-4" href="/admin/customers">
+        <a className="border-2 border-black px-4 py-2 text-xs font-black uppercase hover:bg-black hover:text-white" href="/admin/customers">
           View accounts
         </a>
-        <a className="underline underline-offset-4" href="/admin/orders">
+        <a className="border-2 border-black px-4 py-2 text-xs font-black uppercase hover:bg-black hover:text-white" href="/admin/orders">
           View orders
+        </a>
+        <a className="border-2 border-black px-4 py-2 text-xs font-black uppercase hover:bg-black hover:text-white" href="/admin/products"
+        >
+          Edit Products
         </a>
       </div>
 
