@@ -7,8 +7,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface Customer {
-    full_name: string;
-}
+    full_name: string | null;
+  }
 
 export default function AccountButton() {
     const [user, setUser] = useState<User | null>(null);
@@ -101,7 +101,7 @@ export default function AccountButton() {
     return (
         <div className="flex items-center gap-3">
             <span className="text-sm font-semibold">
-                Welcome, {customer ? customer.full_name : user?.email}!
+            Welcome, {customer?.full_name ?? user?.email}!
             </span>
             <button
                 onClick={signOut}

@@ -3,14 +3,17 @@
 import { useEffect, useState } from "react";
 import { createClientBrowser } from "@/lib/supabase/client";
 
+type OrderStatus = "pending" | "completed" | "cancelled";
+const STATUS_OPTIONS: OrderStatus[] = ["pending", "completed", "cancelled"];
+
 type Order = {
   id: string;
   user_id: string;
   total_price: number;
   tax: number;
   discount_code: string | null;
-  status: string;
-  created_at: string;
+  status: OrderStatus | null;
+  created_at: string | null;
 };
 
 export default function AdminOrdersPage() {
@@ -56,8 +59,17 @@ export default function AdminOrdersPage() {
     setLoading(false);
   }
 
-  async function updateStatus(id: string, status: string) {
-    await supabase.from("orders").update({ status }).eq("id", id);
+  async function updateStatus(id: string, status: OrderStatus) {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status })
+      .eq("id", id);
+  
+    if (error) {
+      console.error(error);
+      return;
+    }
+  
     await loadOrders(sortField);
   }
 
@@ -97,7 +109,9 @@ export default function AdminOrdersPage() {
             <div key={order.id} className="border-4 border-black p-4 bg-white shadow-[6px_6px_0_0_#000]">
               <div className="flex items-center justify-between">
                 <div className="font-black uppercase text-sm">Order #{order.id.slice(0, 8)}</div>
-                <div className="text-xs opacity-70">{new Date(order.created_at).toLocaleDateString()}</div>
+                <div className="text-xs opacity-70">{order.created_at
+  ? new Date(order.created_at).toLocaleDateString()
+  : "No date"}</div>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                 <div><span className="font-black">Total:</span> ${order.total_price.toFixed(2)}</div>
@@ -106,15 +120,17 @@ export default function AdminOrdersPage() {
                 <div><span className="font-black">User:</span> {order.user_id.slice(0, 8)}...</div>
               </div>
               <div className="mt-3 flex gap-2">
-                {["pending", "completed", "cancelled"].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => updateStatus(order.id, s)}
-                    className={`text-xs font-black uppercase border-2 border-black px-2 py-1 ${order.status === s ? "bg-black text-white" : "bg-white"}`}
-                  >
-                    {s}
-                  </button>
-                ))}
+              {STATUS_OPTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => updateStatus(order.id, s)}
+                  className={`text-xs font-black uppercase border-2 border-black px-2 py-1 ${
+                    order.status === s ? "bg-black text-white" : "bg-white"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
               </div>
             </div>
           ))}

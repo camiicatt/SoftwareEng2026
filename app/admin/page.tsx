@@ -1,6 +1,6 @@
 "use client";
 
-import { act, use, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClientBrowser } from "@/lib/supabase/client";
 
 type ProductRow = {

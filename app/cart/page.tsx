@@ -96,64 +96,68 @@ export default function CartPage() {
 
     async function placeOrder() {
         if (orderItems.length === 0) return;
-
+      
         setPlacingOrder(true);
         setError("");
         setSuccessMessage("");
-
+      
         try {
-            const {
-                data: { session },
-            } = await supabase.auth.getSession();
-
-            const token = session?.access_token;
-
-            if (!token) {
-                setError("Please log in to place an order.");
-                setPlacingOrder(false);
-                return;
-            }
-
-            const res = await fetch(`${BACKEND_URL}/orders/placeOrder`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`, // 🔥 key change
-                },
-                body: JSON.stringify({
-                    items: orderItems,
-                    discountCode: discountCode.trim(),
-                    status: "pending",
-                }),
-            });
-
-            const data = await parseJsonSafe(res);
-
-            if (!res.ok) {
-                throw new Error(data?.error || "Failed to place order");
-            }
-
-            setSuccessMessage("Order placed successfully.");
-            clearCart();
-            setTotals(null);
-            setDiscountCode("");
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+      
+          if (!user) {
+            setError("Please log in to place an order.");
+            return;
+          }
+      
+          // 1. Create order
+          const { data: order, error: orderError } = await supabase
+            .from("orders")
+            .insert({
+              user_id: user.id,
+              total_price: subtotal,
+              tax: subtotal * 0.08, // simple tax example
+              status: "pending",
+            })
+            .select()
+            .single();
+      
+          if (orderError) throw orderError;
+      
+          // 2. Insert order items
+          const itemsToInsert = orderItems.map((item) => ({
+            order_id: order.id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price_at_purchase: item.price_at_purchase,
+          }));
+      
+          const { error: itemsError } = await supabase
+            .from("order_items")
+            .insert(itemsToInsert);
+      
+          if (itemsError) throw itemsError;
+      
+          setSuccessMessage("Order placed successfully!");
+          clearCart();
         } catch (err: any) {
-            setError(err?.message || "Failed to place order");
+          setError(err.message);
         } finally {
-            setPlacingOrder(false);
+          setPlacingOrder(false);
         }
-    }
+      }
 
     function handleQuantityChange(id: string | number, value: string) {
         const qty = Math.max(1, Number(value) || 1);
         updateQuantity(id, qty);
     }
 
-    const displayedSubtotal = totals?.subtotal ?? subtotal;
-    const displayedDiscount = totals?.discountAmount ?? 0;
-    const displayedTax = totals?.tax ?? 0;
-    const displayedTotal = totals?.total ?? subtotal;
-
+    const displayedSubtotal = subtotal;
+    const displayedTax = subtotal * 0.08;
+    const displayedDiscount = 0;
+    const displayedTotal = displayedSubtotal + displayedTax;
+    
     return (
       <section className="pt-10">
         <h1 className="text-4xl font-black uppercase tracking-tight">Cart</h1>
