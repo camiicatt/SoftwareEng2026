@@ -188,7 +188,7 @@ export default function ProductsClient() {
         // keep your fallback for demos if DB is empty
         const fallback: Product[] = [
           {
-            id: "demo-mj-1",
+            id: "900001",
             title: "Thriller",
             artist: "Michael Jackson",
             description: "Pop legend. Full of hits.",
@@ -198,7 +198,7 @@ export default function ProductsClient() {
             category: "Vinyl",
           },
           {
-            id: "demo-weeknd-1",
+            id: "900002",
             title: "After Hours",
             artist: "The Weeknd",
             description: "Modern classic. Dark, cinematic, iconic.",
@@ -297,7 +297,7 @@ export default function ProductsClient() {
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value as any)}
-                  className="rounded-2xl border border-white/15 bg-white/10 px-3 py-3 text-sm font-black text-white outline-none"
+                  className="rounded-2xl border-2 border-black bg-white px-3 py-3 text-sm font-black text-black outline-none"
                 >
                   <option value="stock_desc">Availability</option>
                   <option value="price_asc">Price ↑</option>
@@ -307,7 +307,7 @@ export default function ProductsClient() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="rounded-2xl border border-white/15 bg-white/10 px-3 py-3 text-sm font-black text-white outline-none"
+                  className="rounded-2xl border-2 border-black bg-white px-3 py-3 text-sm font-black text-black outline-none"
                 >
                   {categories.map((c) => (
                     <option key={c} value={c}>

@@ -95,54 +95,55 @@ export default function CartPage() {
     }, [cartItems]);
 
     async function placeOrder() {
-        if (orderItems.length === 0) return;
+  if (orderItems.length === 0) return;
 
-        setPlacingOrder(true);
-        setError("");
-        setSuccessMessage("");
+  setPlacingOrder(true);
+  setError("");
+  setSuccessMessage("");
 
-        try {
-            const {
-                data: { session },
-            } = await supabase.auth.getSession();
-
-            const token = session?.access_token;
-
-            if (!token) {
-                setError("Please log in to place an order.");
-                setPlacingOrder(false);
-                return;
-            }
-
-            const res = await fetch(`${BACKEND_URL}/orders/placeOrder`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`, // 🔥 key change
-                },
-                body: JSON.stringify({
-                    items: orderItems,
-                    discountCode: discountCode.trim(),
-                    status: "pending",
-                }),
-            });
-
-            const data = await parseJsonSafe(res);
-
-            if (!res.ok) {
-                throw new Error(data?.error || "Failed to place order");
-            }
-
-            setSuccessMessage("Order placed successfully.");
-            clearCart();
-            setTotals(null);
-            setDiscountCode("");
-        } catch (err: any) {
-            setError(err?.message || "Failed to place order");
-        } finally {
-            setPlacingOrder(false);
-        }
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      setError("Please log in to place an order.");
+      return;
     }
+
+    // Get access token for backend auth
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    if (!token) {
+      setError("Missing session token. Please sign out and sign back in.");
+      return;
+    }
+
+    const res = await fetch(`${BACKEND_URL}/orders/placeOrder`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        items: orderItems,
+        discountCode: discountCode.trim() || null,
+        status: "pending",
+      }),
+    });
+
+    const data = await parseJsonSafe(res);
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to place order");
+    }
+
+    setSuccessMessage(`Order placed successfully! Order ID: ${data?.order?.id ?? "created"}`);
+    clearCart();
+  } catch (err: any) {
+    setError(err?.message || "Failed to place order");
+  } finally {
+    setPlacingOrder(false);
+  }
+}
 
     function handleQuantityChange(id: string | number, value: string) {
         const qty = Math.max(1, Number(value) || 1);
