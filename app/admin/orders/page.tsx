@@ -49,12 +49,12 @@ export default function AdminOrdersPage() {
     })();
   }, []);
 
- async function loadOrders(field: string) {
+  async function loadOrders(field: string) {
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
       .select("*")
-      .order(field, { ascending: field !== "total_price" ? false : true });
+      .order(field, {ascending: field === "total_price" ? true : field === "user_id" ? true : false,});
     if (!error && data) setOrders(data as Order[]);
     setLoading(false);
   }
@@ -64,12 +64,12 @@ export default function AdminOrdersPage() {
       .from("orders")
       .update({ status })
       .eq("id", id);
-  
+
     if (error) {
       console.error(error);
       return;
     }
-  
+
     await loadOrders(sortField);
   }
 
@@ -87,13 +87,19 @@ export default function AdminOrdersPage() {
       {/* Sort Controls */}
       <div className="flex gap-3">
         <span className="text-sm font-black uppercase">Sort by:</span>
-        {["created_at", "total_price", "status"].map((field) => (
+        {["created_at", "total_price", "status", "user_id"].map((field) => (
           <button
             key={field}
             onClick={() => { setSortField(field); loadOrders(field); }}
             className={`text-xs font-black uppercase border-2 border-black px-3 py-1 ${sortField === field ? "bg-black text-white" : "bg-white"}`}
           >
-            {field === "created_at" ? "Date" : field === "total_price" ? "Price" : "Status"}
+            {field === "created_at"
+              ? "Date"
+              : field === "total_price"
+                ? "Price"
+                : field === "status"
+                  ? "Status"
+                  : "Customer ID"}
           </button>
         ))}
       </div>
@@ -110,8 +116,8 @@ export default function AdminOrdersPage() {
               <div className="flex items-center justify-between">
                 <div className="font-black uppercase text-sm">Order #{order.id.slice(0, 8)}</div>
                 <div className="text-xs opacity-70">{order.created_at
-  ? new Date(order.created_at).toLocaleDateString()
-  : "No date"}</div>
+                  ? new Date(order.created_at).toLocaleDateString()
+                  : "No date"}</div>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                 <div><span className="font-black">Total:</span> ${order.total_price.toFixed(2)}</div>
@@ -120,17 +126,16 @@ export default function AdminOrdersPage() {
                 <div><span className="font-black">User:</span> {order.user_id.slice(0, 8)}...</div>
               </div>
               <div className="mt-3 flex gap-2">
-              {STATUS_OPTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => updateStatus(order.id, s)}
-                  className={`text-xs font-black uppercase border-2 border-black px-2 py-1 ${
-                    order.status === s ? "bg-black text-white" : "bg-white"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+                {STATUS_OPTIONS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => updateStatus(order.id, s)}
+                    className={`text-xs font-black uppercase border-2 border-black px-2 py-1 ${order.status === s ? "bg-black text-white" : "bg-white"
+                      }`}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             </div>
           ))}
