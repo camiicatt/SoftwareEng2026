@@ -61,7 +61,7 @@ export default async function Home() {
                 </h1>
 
                 <p className="mt-5 max-w-2xl text-base sm:text-lg lg:text-xl font-semibold text-[#1f1f1f]/80">
-                  A warm little storefront for album lovers. Shop curated records,
+                  Calling all vinyl lovers! Shop curated records,
                   discover fresh arrivals, and build your next favorite collection.
                 </p>
               </div>
@@ -71,15 +71,9 @@ export default async function Home() {
                   href="/shop"
                   className="inline-flex items-center justify-center border-4 border-[#1f1f1f] bg-[#88A7A9] px-5 py-3 text-xs sm:text-sm font-black uppercase tracking-wide transition hover:-translate-y-1"
                 >
-                  Browse New Arrivals
-                </Link>
-
-                <Link
-                  href="/shop"
-                  className="inline-flex items-center justify-center border-4 border-[#1f1f1f] bg-white px-5 py-3 text-xs sm:text-sm font-black uppercase tracking-wide transition hover:-translate-y-1"
-                >
                   Shop All Records
                 </Link>
+
               </div>
             </div>
 
