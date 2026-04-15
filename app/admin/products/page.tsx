@@ -30,10 +30,25 @@ function normalizeProduct(p: RawProduct): Product {
     };
 }
 
+
+// Helper functions for preview display
+function badgeText(qty: number) {
+    if (qty <= 0) return "Sold Out";
+    if (qty <= 3) return "Low Stock";
+    return "In Stock";
+}
+
+function badgeStyle(qty: number) {
+    if (qty <= 0) return "bg-black text-[#FFF3E6]";
+    if (qty <= 3) return "bg-[#FF8A80] text-black";
+    return "bg-[#A8DADC] text-black";
+}
+
 function money(n: number) {
     return `$${Number.isFinite(n) ? n.toFixed(2) : "0.00"}`;
 }
 
+// For viewing all products to choose to edit
 function ProductCard({
     p,
     onHover,
@@ -64,6 +79,86 @@ function ProductCard({
                 Edit
             </button>
         </div>
+    );
+}
+
+// For the live preview panel
+function PreviewProductCard({ p }: { p: Product }) {
+    return (
+        <article className="relative border-4 border-black bg-white shadow-[6px_6px_0_0_#000]">
+
+            {/* Badge */}
+            <div className="absolute left-3 top-3 z-10">
+                <div
+                    className={`border-2 border-black px-3 py-1 text-[11px] font-black uppercase tracking-widest shadow-[3px_3px_0_0_#000] ${badgeStyle(
+                        p.quantity
+                    )}`}
+                >
+                    {badgeText(p.quantity)}
+                </div>
+            </div>
+
+            {/* Image */}
+            <div className="relative aspect-[4/5] w-full overflow-hidden border-b-4 border-black bg-[#EAF4F4]">
+                {p.image_url ? (
+                    <img
+                        src={p.image_url}
+                        alt={p.title}
+                        className="h-full w-full object-cover"
+                    />
+                ) : (
+                    <div className="flex h-full items-center justify-center text-xs font-black">
+                        No Cover
+                    </div>
+                )}
+            </div>
+
+            {/* Content */}
+            <div className="space-y-3 p-4">
+                <div className="flex justify-between gap-3">
+                    <div className="min-w-0">
+                        <h3 className="truncate text-base font-black uppercase">
+                            {p.title}
+                        </h3>
+                        <p className="truncate text-sm font-bold text-black/75">
+                            {p.artist}
+                        </p>
+                    </div>
+
+                    <div className="border-2 border-black bg-[#F2D23C] px-3 py-1 text-sm font-black shadow-[3px_3px_0_0_#000]">
+                        {money(p.price)}
+                    </div>
+                </div>
+
+                <p className="line-clamp-2 text-xs font-semibold text-black/75">
+                    {p.description || "No description yet."}
+                </p>
+
+                <div className="flex items-center gap-2">
+                    <span className="border-2 border-black bg-[#FFD6A5] px-2 py-1 text-[11px] font-black uppercase">
+                        {p.category}
+                    </span>
+
+                    <span className="ml-auto text-xs font-black uppercase text-black/75">
+                        Qty {p.quantity}
+                    </span>
+                </div>
+
+                {/* Disabled buttons (visual only) */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                        disabled
+                        className="border-2 border-black bg-neutral-300 px-3 py-2 text-sm font-black uppercase"
+                    >
+                        Add
+                    </button>
+
+                    <div className="border-2 border-black bg-[#CFE8F3] px-3 py-2 text-center text-sm font-black uppercase">
+                        View
+                    </div>
+                </div>
+            </div>
+        </article>
     );
 }
 
@@ -127,10 +222,45 @@ export default function ProductsPageLivePreview() {
 
     const handleSave = async () => {
         if (!editing) return;
+
+        try {
+            const res = await fetch(`/api/products/${editing.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    title: editing.title,
+                    artist: editing.artist,
+                    description: editing.description,
+                    price: editing.price,
+                    quantity: editing.quantity,
+                    image_url: editing.image_url,
+                    category: editing.category,
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err?.error || "Failed to update product");
+            }
+
+            const updated = await res.json();
+
+            // live UI update
+            setAllItems((prev) =>
+                prev.map((p) => (p.id === updated.id ? normalizeProduct(updated) : p))
+            );
+
+            setEditing(null);
+        } catch (e: any) {
+            console.error(e);
+            alert(e.message || "Something went wrong");
+        }
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-8">
+        <div className="max-screen-xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-8">
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-black uppercase">Edit Products</h1>
                 <a className="underline underline-offset-4" href="/admin">
@@ -138,9 +268,9 @@ export default function ProductsPageLivePreview() {
                 </a>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-8">
+            <div className="grid gap-8 lg:grid-cols-[1fr_420px]">
                 {/* Left: Filters + Grid */}
-                <div className="flex-1">
+                <div className="h-full overflow-y-auto pr-2">
                     <div className="flex gap-4 mb-4">
                         {/* Category dropdown */}
                         <select
@@ -176,133 +306,105 @@ export default function ProductsPageLivePreview() {
                     ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                             {items.map((p) => (
-                                <ProductCard key={String(p.id)} p={p} onHover={setHovered} onEdit={setEditing}/>
+                                <ProductCard key={String(p.id)} p={p} onHover={setHovered} onEdit={setEditing} />
                             ))}
                         </div>
                     )}
                 </div>
 
-                {/* Right: Live Preview + Edit Details */}
-                {editing || liveHovered ? (
-                    <div className="w-full lg:w-96 border rounded-2xl p-4 shadow bg-white transition-all relative">
-                        <div className="absolute -top-3 left-4 bg-[#FFD6A5] px-4 py-2 text-[10px] font-black uppercase rounded-full shadow">
-                            {editing ? "Edit Product" : "Preview"}
+                {/* Right: Live preview + edit panel */}
+                {editing && (
+                    <div className="h-full sticky top-0">
+                        <div className="h-full flex flex-col gap-6">
+                        {/* Live Preview */}
+                        <div className="max-w-xs mx-auto border-4 border-black bg-[#FFF3E6] p-5 shadow-[6px_6px_0_0_#000]">
+                            <h2 className="text-lg font-black uppercase mb-4">Live Preview</h2>
+                            <PreviewProductCard p={editing} />
                         </div>
-                        {(editing || liveHovered) && (
-                            <>
-                                <img
-                                    src={(editing || liveHovered)?.image_url}
-                                    alt={(editing || liveHovered)?.title}
-                                    className="w-full h-64 object-cover rounded-lg"
+
+                        {/* Edit panel */}
+                        <div className="border-4 border-black bg-[#CFE8F3] p-5 shadow-[6px_6px_0_0_#000]">
+                            <h2 className="text-lg font-black uppercase mb-4">Edit Product</h2>
+
+                            <div className="flex flex-col gap-3">
+
+                                <input
+                                    className="border-2 border-black px-3 py-2 font-semibold bg-white"
+                                    value={editing.title}
+                                    onChange={(e) =>
+                                        setEditing({ ...editing, title: e.target.value })
+                                    }
+                                    placeholder="Title"
                                 />
-                                {editing ? (
-                                    <div className="mt-4 flex flex-col gap-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-15 text-right font-bold">Title:</span>
-                                            <input
-                                                className="border rounded px-2 py-1"
-                                                value={editing.title}
-                                                onChange={(e) =>
-                                                    setEditing({ ...editing, title: e.target.value })
-                                                }
-                                                placeholder="Title"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-15 text-right font-bold">Artist:</span>
-                                            <input
-                                                className="border rounded px-2 py-1"
-                                                value={editing.artist}
-                                                onChange={(e) =>
-                                                    setEditing({ ...editing, artist: e.target.value })
-                                                }
-                                                placeholder="Artist"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-15 text-right font-bold">Desc:</span>
-                                            <textarea
-                                                className="border rounded px-2 py-1"
-                                                value={editing.description}
-                                                onChange={(e) =>
-                                                    setEditing({ ...editing, description: e.target.value })
-                                                }
-                                                placeholder="Description"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-15 text-right font-bold">Price:</span>
-                                            <input
-                                                type="number"
-                                                className="border rounded px-2 py-1"
-                                                value={editing.price}
-                                                onChange={(e) =>
-                                                    setEditing({ ...editing, price: Number(e.target.value) })
-                                                }
-                                                placeholder="Price"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-15 text-right font-bold">Qty:</span>
-                                            <input
-                                                type="number"
-                                                className="border rounded px-2 py-1"
-                                                value={editing.quantity}
-                                                onChange={(e) =>
-                                                    setEditing({ ...editing, quantity: Number(e.target.value) })
-                                                }
-                                                placeholder="Quantity"
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={handleSave}
-                                            className="mt-2 w-full rounded-lg border-2 border-black px-3 py-2 text-s font-black uppercase bg-[#EDEDED] hover:bg-[#88A7A9] hover:text-white"
-                                        >
-                                            Save
-                                        </button>
-                                        <button
-                                            onClick={() => setEditing(null)}
-                                            className="mt-2 w-full rounded-lg border-2 border-black px-3 py-2 text-s font-black uppercase bg-[#EDEDED] hover:bg-[#D97B66] hover:text-white"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <h2 className="mt-4 font-black text-xl">{liveHovered?.title}</h2>
-                                        <p className="text-sm font-bold text-neutral-700">
-                                            {liveHovered?.artist}
-                                        </p>
-                                        <p className="mt-2 text-xs text-neutral-600">
-                                            {liveHovered?.description}
-                                        </p>
-                                        <div className="mt-3 flex justify-between items-center">
-                                            <div className="text-lg font-black">
-                                                {money(liveHovered?.price ?? 0)}
-                                            </div>
-                                            <div className="text-xs font-bold">
-                                                {liveHovered?.quantity} in stock
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => liveHovered && addToCart(liveHovered)}
-                                            disabled={liveHovered?.quantity! <= 0}
-                                            className="mt-4 w-full rounded-lg bg-black text-white py-2 font-black disabled:bg-neutral-400 disabled:cursor-not-allowed"
-                                        >
-                                            Add to Cart
-                                        </button>
-                                        <Link
-                                            href={`/products/${liveHovered?.id}`}
-                                            className="mt-2 inline-block w-full text-center rounded-lg border border-black py-2 font-black text-black"
-                                        >
-                                            View Details
-                                        </Link>
-                                    </>
-                                )}
-                            </>
-                        )}
+
+                                <input
+                                    className="border-2 border-black px-3 py-2 font-semibold bg-white"
+                                    value={editing.artist}
+                                    onChange={(e) =>
+                                        setEditing({ ...editing, artist: e.target.value })
+                                    }
+                                    placeholder="Artist"
+                                />
+
+                                <textarea
+                                    className="border-2 border-black px-3 py-2 font-semibold bg-white"
+                                    value={editing.description}
+                                    onChange={(e) =>
+                                        setEditing({ ...editing, description: e.target.value })
+                                    }
+                                    placeholder="Description"
+                                />
+
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        className="w-1/2 border-2 border-black px-3 py-2 font-semibold bg-white" 
+                                        value={editing.price}
+                                        onChange={(e) =>
+                                            setEditing({ ...editing, price: Number(e.target.value) })
+                                        }
+                                        placeholder="Price"
+                                    />
+                                    <input
+                                        type="number"
+                                        className="w-1/2 border-2 border-black px-3 py-2 font-semibold bg-white"
+                                        value={editing.quantity}
+                                        onChange={(e) =>
+                                            setEditing({ ...editing, quantity: Number(e.target.value) })
+                                        }
+                                        placeholder="Qty"
+                                    />
+                                </div>
+
+                                <input
+                                    className="border-2 border-black px-3 py-2 font-semibold bg-white"
+                                    value={editing.image_url}
+                                    onChange={(e) =>
+                                        setEditing({ ...editing, image_url: e.target.value })
+                                    }
+                                    placeholder="Image URL"
+                                />
+
+                                <div className="flex gap-2 mt-3">
+                                    <button
+                                        onClick={handleSave}
+                                        className="flex-1 border-2 border-black bg-black text-white py-2 font-black uppercase"
+                                    >
+                                        Save
+                                    </button>
+
+                                    <button
+                                        onClick={() => setEditing(null)}
+                                        className="flex-1 border-2 border-black bg-[#EDEDED] py-2 font-black uppercase"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
                     </div>
-                ) : null}
+                )}
             </div>
         </div>
     );
