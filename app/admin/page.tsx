@@ -65,6 +65,8 @@ export default function AdminDashboard() {
   const [discountStatus, setDiscountStatus] = useState("");
   const [discountCodes, setDiscountCodes] = useState<any[]>([]);
 
+  const [imageUrl, setImageUrl] = useState("");
+
   const resolvedGenre = useMemo(() => {
     if (genreSelect === "Other") return customGenre.trim();
     return genreSelect.trim();
@@ -179,20 +181,6 @@ export default function AdminDashboard() {
     try {
       let image_url: string | null = null;
 
-      if (file) {
-        const ext = (file.name.split(".").pop() || "png").toLowerCase();
-        const path = `${crypto.randomUUID()}.${ext}`;
-
-        const upload = await supabase.storage
-          .from("vinyl-images")
-          .upload(path, file, { upsert: false });
-
-        if (upload.error) throw new Error(upload.error.message);
-
-        const { data } = supabase.storage.from("vinyl-images").getPublicUrl(path);
-        image_url = data.publicUrl;
-      }
-
       const { error } = await supabase.from("products").insert({
         name: name.trim(),
         artist: artist.trim() || null,
@@ -201,7 +189,7 @@ export default function AdminDashboard() {
         quantity: qtyNum,
         category: category.trim() || "Vinyl",
         genre: resolvedGenre || null,
-        image_url,
+        image_url: imageUrl.trim() || null,
       });
 
       if (error) throw new Error(error.message);
@@ -412,12 +400,13 @@ export default function AdminDashboard() {
                     Cover Image
                   </label>
                   <div className="border-2 border-dashed border-black bg-[#EAF4F4] px-3 py-4">
-                    <input
-                      className="w-full text-sm font-semibold"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    />
+                  <input
+                    type="text"
+                    placeholder="Paste image URL"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    className="w-full border-2 border-black px-3 py-2.5 font-semibold"
+                  />
                   </div>
                   <div className="text-[11px] font-bold uppercase tracking-wide text-black/65">
                     Upload bucket: vinyl-images
