@@ -144,18 +144,6 @@ export default function AdminLoginPage() {
               <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-current transition-all duration-150 group-hover:w-full" />
             </span>
           </button>
-
-          <button
-            type="button"
-            onClick={signUp}
-            disabled={busy}
-            className="group w-full rounded border-2 border-black p-2 text-center inline-block bg-[#F2D23C] hover:bg-[#EDDB7E] disabled:opacity-50"
-          >
-            <span className="relative">
-              Create account
-              <span className="absolute -bottom-1 left-0 h-[2px] w-0 bg-current transition-all duration-150 group-hover:w-full" />
-            </span>
-          </button>
         </form>
 
         {status ? (

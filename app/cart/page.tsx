@@ -5,8 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { createClientBrowser } from "@/lib/supabase/client";
 import { useCart } from "@/app/context/cartContext";
 
-const BACKEND_URL = "http://localhost:5000";
-
 
 function money(n: number) {
     const safe = Number.isFinite(n) ? n : 0;
@@ -32,13 +30,21 @@ export default function CartPage() {
 
     const orderItems = useMemo(
         () =>
-            cartItems.map((item) => ({
-                product_id: item.id,
-                quantity: item.cartQuantity,
-                price_at_purchase: item.price,
-            })),
+          cartItems.map((item) => {
+            const productId = Number(item.id);
+      
+            if (!Number.isFinite(productId)) {
+              throw new Error(`Invalid product id: ${item.id}`);
+            }
+      
+            return {
+              product_id: productId,
+              quantity: item.cartQuantity,
+              price_at_purchase: item.price,
+            };
+          }),
         [cartItems]
-    );
+      );
 
     async function parseJsonSafe(res: Response) {
         try {
@@ -59,7 +65,7 @@ export default function CartPage() {
         setSuccessMessage("");
 
         try {
-            const res = await fetch(`${BACKEND_URL}/orders/calculate`, {
+            const res = await fetch("/api/orders/calculate", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -148,15 +154,15 @@ export default function CartPage() {
         }
       }
 
-    function handleQuantityChange(id: string | number, value: string) {
+      function handleQuantityChange(id: number, value: string) {
         const qty = Math.max(1, Number(value) || 1);
         updateQuantity(id, qty);
-    }
+      }
 
-    const displayedSubtotal = subtotal;
-    const displayedTax = subtotal * 0.08;
-    const displayedDiscount = 0;
-    const displayedTotal = displayedSubtotal + displayedTax;
+      const displayedSubtotal = totals?.subtotal ?? subtotal;
+      const displayedTax = totals?.tax ?? subtotal * 0.08;
+      const displayedDiscount = totals?.discountAmount ?? 0;
+      const displayedTotal = totals?.total ?? displayedSubtotal + displayedTax;
     
     return (
       <section className="pt-10">
