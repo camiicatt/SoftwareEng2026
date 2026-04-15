@@ -71,13 +71,6 @@ export default async function Home() {
                 >
                   Shop All Records
                 </Link>
-
-                <Link
-                  href="/shop"
-                  className="inline-flex items-center justify-center border-4 border-[#1f1f1f] bg-[#F2D23C] px-5 py-3 text-xs font-black uppercase tracking-wide shadow-[6px_6px_0px_#1f1f1f] transition hover:-translate-y-1 sm:text-sm"
-                >
-                  New Arrivals
-                </Link>
               </div>
             </div>
 
