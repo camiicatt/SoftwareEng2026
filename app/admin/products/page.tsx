@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClientBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
+import GenericToast from "@/app/components/GenericToast";
 
 type RawProduct = any;
 
@@ -157,7 +158,7 @@ function validate(p: Product) {
     if (!p.name.trim()) newErrors.name = "Name is required";
     if (!p.artist.trim()) newErrors.artist = "Artist is required";
 
-    if (!Number.isFinite(p.price) || p.price <= 0) {
+    if (isNaN(Number(p.price)) || Number(p.price) <= 0) {
         newErrors.price = "Price must be greater than 0";
     }
 
@@ -186,7 +187,12 @@ function EditForm({
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const handleSave = () => {
-        const validationErrors = validate(product);
+        const cleaned = {
+            ...product,
+            price: parseFloat(product.price as any),
+        };
+
+        const validationErrors = validate(cleaned);
         setErrors(validationErrors);
 
         if (Object.keys(validationErrors).length > 0) return;
@@ -261,8 +267,8 @@ function EditForm({
                             onChange={(e) =>
                                 setProduct({
                                     ...product,
-                                    price: Number(e.target.value),
-                                })
+                                    price: e.target.value,
+                                } as any)
                             }
                         />
                         {errors.price && (
@@ -416,15 +422,26 @@ export default function ProductsPageLivePreview() {
     const supabase: any = createClientBrowser();
 
     const [allItems, setAllItems] = useState<Product[]>([]);
+    const [sort, setSort] = useState("title");
     const [loading, setLoading] = useState(true);
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [draftProduct, setDraftProduct] = useState<Product | null>(null);
 
     const [category, setCategory] = useState("All");
-    const [sort, setSort] = useState("title");
 
     const [isAdmin, setIsAdmin] = useState(false);
+
+    // Toast for update message
+    const [toast, setToast] = useState({ show: false, message: "" });
+
+    const showToast = (message: string) => {
+        setToast({ show: true, message });
+    };
+
+    const hideToast = () => {
+        setToast({ show: false, message: "" });
+    };
 
     useEffect(() => {
         // Admin check
@@ -526,11 +543,14 @@ export default function ProductsPageLivePreview() {
 
         setSelectedProduct(null);
         setDraftProduct(null);
+
+        showToast("Product updated successfully!");
     };
 
     return (
         <div className="max-w-7xl mx-auto p-6">
-
+            <GenericToast show={toast.show} message={toast.message} onClose={hideToast} />
+            
             <div className="flex justify-between mb-6">
                 <h1 className="text-2xl font-black uppercase">Edit Products</h1>
                 <Link href="/admin" className="underline">
