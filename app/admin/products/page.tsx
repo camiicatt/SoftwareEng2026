@@ -15,6 +15,7 @@ type Product = {
     quantity: number;
     image_url: string;
     category: string;
+    genre: string;
 };
 
 const productCategories = ["Vinyl", "CD"] as const;
@@ -30,6 +31,7 @@ function normalizeProduct(p: RawProduct): Product {
         quantity: Number(p.quantity ?? 0),
         image_url: String(p.image_url ?? ""),
         category: String(p.category ?? "Vinyl"),
+        genre: String(p.genre ?? "Unknown")
     };
 }
 
@@ -150,6 +152,27 @@ function Preview({ p }: { p: Product | null }) {
 
 /* ---------------------- Edit Panel --------------------- */
 
+function validate(p: Product) {
+    const newErrors: Record<string, string> = {};
+
+    if (!p.name.trim()) newErrors.name = "Name is required";
+    if (!p.artist.trim()) newErrors.artist = "Artist is required";
+
+    if (!Number.isFinite(p.price) || p.price <= 0) {
+        newErrors.price = "Price must be greater than 0";
+    }
+
+    if (!Number.isInteger(p.quantity) || p.quantity < 0) {
+        newErrors.quantity = "Quantity must be 0 or more";
+    }
+
+    if (!p.genre.trim()) newErrors.genre = "Genre is required";
+
+    if (!p.image_url.trim()) newErrors.image_url = "Cover image is required"
+
+    return newErrors;
+}
+
 function EditForm({
     product,
     setProduct,
@@ -161,6 +184,17 @@ function EditForm({
     onSave: () => void;
     onCancel: () => void;
 }) {
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const handleSave = () => {
+        const validationErrors = validate(product);
+        setErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length > 0) return;
+
+        onSave(); // only if valid
+    };
+
     return (
         <div className="border-4 border-black bg-[#CFE8F3] p-6 shadow-[8px_8px_0_0_#000]">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -189,6 +223,11 @@ function EditForm({
                                 setProduct({ ...product, name: e.target.value })
                             }
                         />
+                        {errors.name && (
+                            <p className="text-xs text-red-600 font-bold">
+                                {errors.name}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-1.5">
@@ -202,6 +241,11 @@ function EditForm({
                                 setProduct({ ...product, artist: e.target.value })
                             }
                         />
+                        {errors.artist && (
+                            <p className="text-xs text-red-600 font-bold">
+                                {errors.artist}
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -222,6 +266,11 @@ function EditForm({
                                 })
                             }
                         />
+                        {errors.price && (
+                            <p className="text-xs text-red-600 font-bold">
+                                {errors.price}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-1.5">
@@ -239,6 +288,11 @@ function EditForm({
                                 })
                             }
                         />
+                        {errors.quantity && (
+                            <p className="text-xs text-red-600 font-bold">
+                                {errors.quantity}
+                            </p>
+                        )}
                     </div>
 
                     <div className="space-y-1.5">
@@ -265,25 +319,58 @@ function EditForm({
                     </div>
                 </div>
 
-                {/* Cover image */}
-                <div className="space-y-1.5">
-                    <label className="text-xs font-black uppercase tracking-widest text-black/80">
-                        Cover Image
-                    </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                    <div className="border-2 border-dashed border-black bg-[#EAF4F4] px-3 py-4">
+                    {/* Genre */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-widest text-black/80">
+                            Genre
+                        </label>
+
                         <input
-                            className="w-full border-2 border-black px-3 py-2.5 font-semibold"
-                            value={product.image_url}
+                            className="w-full border-2 border-black bg-white px-3 py-2.5 font-semibold outline-none"
+                            value={product.genre}
                             onChange={(e) =>
                                 setProduct({
                                     ...product,
-                                    image_url: e.target.value,
+                                    genre: e.target.value,
                                 })
                             }
                         />
+                        {errors.genre && (
+                            <p className="text-xs text-red-600 font-bold">
+                                {errors.genre}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Cover image */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-widest text-black/80">
+                            Cover Image
+                        </label>
+
+                        <div className="border-2 border-dashed border-black bg-[#EAF4F4] px-3 py-4">
+                            <input
+                                className="w-full border-2 border-black px-3 py-2.5 font-semibold"
+                                value={product.image_url}
+                                onChange={(e) =>
+                                    setProduct({
+                                        ...product,
+                                        image_url: e.target.value,
+                                    })
+                                }
+                            />
+                        </div>
+                        {errors.image_url && (
+                            <p className="text-xs text-red-600 font-bold mt-1">
+                                {errors.image_url}
+                            </p>
+                        )}
                     </div>
                 </div>
+
+
 
                 {/* Description */}
                 <div className="space-y-1.5">
@@ -306,7 +393,7 @@ function EditForm({
                 {/* Buttons */}
                 <div className="flex gap-2 pt-2">
                     <button
-                        onClick={onSave}
+                        onClick={handleSave}
                         className="w-full border-2 border-black bg-black px-5 py-3 text-sm font-black uppercase tracking-widest text-[#FFF3E6] hover:bg-[#88A7A9] hover:text-white rounded"
                     >
                         Save Changes
@@ -384,7 +471,7 @@ export default function ProductsPageLivePreview() {
 
     const startEdit = (p: Product) => {
         setSelectedProduct(p);
-        setDraftProduct(p);
+        setDraftProduct({ ...p });
     };
 
     const cancelEdit = () => {
@@ -395,7 +482,7 @@ export default function ProductsPageLivePreview() {
     const saveEdit = async () => {
         if (!draftProduct) return;
 
-        const res = await fetch(`/api/products/${draftProduct.id}`, {
+        const res = await fetch(`/products/update/${draftProduct.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(draftProduct),
@@ -439,6 +526,7 @@ export default function ProductsPageLivePreview() {
                                     <option key={c}>{c}</option>
                                 ))}
                             </select>
+
 
                             <select
                                 value={sort}

@@ -8,16 +8,19 @@ const supabase = createClient(
 
 export async function PUT(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = context.params?.id;
 
-  if (!id) {
+  const { id: rawId } = await context.params;
+
+  if (!rawId) {
     return NextResponse.json(
       { error: "Missing product ID" },
       { status: 400 }
     );
   }
+
+  const id = Number(rawId); 
 
   try {
     const body = await req.json();
@@ -36,8 +39,10 @@ export async function PUT(
     const updates: Record<string, any> = {};
 
     for (const key of allowedFields) {
-      if (body[key] !== undefined) {
-        updates[key] = body[key];
+      const value = body[key];
+
+      if (value !== undefined && value !== "") {
+        updates[key] = value;
       }
     }
 
@@ -53,7 +58,7 @@ export async function PUT(
       .update(updates)
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle(); 
 
     if (error) {
       return NextResponse.json(
@@ -62,7 +67,16 @@ export async function PUT(
       );
     }
 
+    if (!data) {
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      );
+    }
+
+    console.log("Successfully updated product");
     return NextResponse.json(data, { status: 200 });
+
   } catch (err) {
     return NextResponse.json(
       { error: "Invalid request body" },
