@@ -41,7 +41,7 @@ export type Database = {
           created_at?: string
           email: string
           full_name?: string | null
-          id: number
+          id: string
           marketing_opt_in?: boolean
         }
         Update: {
