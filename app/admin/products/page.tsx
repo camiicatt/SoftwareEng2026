@@ -8,7 +8,7 @@ type RawProduct = any;
 
 type Product = {
     id: number | string;
-    title: string;
+    name: string;
     artist: string;
     description: string;
     price: number;
@@ -23,7 +23,7 @@ const productCategories = ["Vinyl", "CD"] as const;
 function normalizeProduct(p: RawProduct): Product {
     return {
         id: p.id ?? p.product_id ?? p.uuid ?? crypto.randomUUID(),
-        title: String(p.title ?? p.name ?? "Untitled"),
+        name: String(p.title ?? p.name ?? "Untitled"),
         artist: String(p.artist ?? "Unknown Artist"),
         description: String(p.description ?? ""),
         price: Number(p.price ?? 0),
@@ -62,11 +62,11 @@ function ProductCard({
         <div className="cursor-pointer overflow-hidden rounded-2xl border border-black/10 bg-white p-3 shadow hover:scale-105 transition-transform relative">
             <img
                 src={p.image_url}
-                alt={p.title}
+                alt={p.name}
                 className="w-full h-40 object-cover rounded-lg"
                 loading="lazy"
             />
-            <div className="mt-2 font-black text-sm">{p.title}</div>
+            <div className="mt-2 font-black text-sm">{p.name}</div>
             <div className="text-xs font-semibold text-neutral-700">{p.artist}</div>
             <div className="mt-1 text-xs font-bold text-neutral-900">
                 {money(p.price)}
@@ -109,7 +109,7 @@ function Preview({ p }: { p: Product | null }) {
             <div className="relative aspect-[4/5] w-full overflow-hidden border-b-4 border-black bg-[#EAF4F4]">
                 <img
                     src={p.image_url}
-                    alt={p.title}
+                    alt={p.name}
                     className="h-full w-full object-cover"
                 />
             </div>
@@ -118,7 +118,7 @@ function Preview({ p }: { p: Product | null }) {
                 <div className="flex justify-between gap-3">
                     <div className="min-w-0">
                         <h3 className="truncate text-base font-black uppercase">
-                            {p.title}
+                            {p.name}
                         </h3>
                         <p className="truncate text-sm font-bold text-black/75">
                             {p.artist}
@@ -184,9 +184,9 @@ function EditForm({
                         </label>
                         <input
                             className="w-full border-2 border-black bg-white px-3 py-2.5 font-semibold outline-none"
-                            value={product.title}
+                            value={product.name}
                             onChange={(e) =>
-                                setProduct({ ...product, title: e.target.value })
+                                setProduct({ ...product, name: e.target.value })
                             }
                         />
                     </div>
@@ -375,7 +375,7 @@ export default function ProductsPageLivePreview() {
         const sorted = [...filtered];
 
         if (sort === "title")
-            sorted.sort((a, b) => a.title.localeCompare(b.title));
+            sorted.sort((a, b) => a.name.localeCompare(b.name));
         if (sort === "price") sorted.sort((a, b) => a.price - b.price);
         if (sort === "-price") sorted.sort((a, b) => b.price - a.price);
 

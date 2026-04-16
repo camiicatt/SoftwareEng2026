@@ -3,26 +3,27 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! 
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  const { id } = params;
+  const id = context.params?.id;
 
   if (!id) {
-    return NextResponse.json({ error: "Missing product ID" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing product ID" },
+      { status: 400 }
+    );
   }
 
   try {
     const body = await req.json();
 
-    // Although it shouldn't ever occur, prevent update id or created_at timestamp
     const allowedFields = [
       "name",
-      "title",
       "artist",
       "description",
       "price",
@@ -35,12 +36,11 @@ export async function PUT(
     const updates: Record<string, any> = {};
 
     for (const key of allowedFields) {
-      if (key in body) {
+      if (body[key] !== undefined) {
         updates[key] = body[key];
       }
     }
 
-    // Prevent empty update
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
         { error: "No valid fields provided for update" },
@@ -63,7 +63,6 @@ export async function PUT(
     }
 
     return NextResponse.json(data, { status: 200 });
-
   } catch (err) {
     return NextResponse.json(
       { error: "Invalid request body" },
