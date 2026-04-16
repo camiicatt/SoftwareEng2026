@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useCart } from "@/app/context/cartContext";
+import { createClientBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
 
 type RawProduct = any;
@@ -19,7 +19,6 @@ type Product = {
 };
 
 const productCategories = ["Vinyl", "CD"] as const;
-
 
 function normalizeProduct(p: RawProduct): Product {
     return {
@@ -414,7 +413,7 @@ function EditForm({
 /* ---------------------- Full page --------------------- */
 
 export default function ProductsPageLivePreview() {
-    const { addToCart } = useCart();
+    const supabase: any = createClientBrowser();
 
     const [allItems, setAllItems] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -425,7 +424,36 @@ export default function ProductsPageLivePreview() {
     const [category, setCategory] = useState("All");
     const [sort, setSort] = useState("title");
 
+    const [isAdmin, setIsAdmin] = useState(false);
+
     useEffect(() => {
+        // Admin check
+        const checkAdmin = async () => {
+            const { data: userRes } = await supabase.auth.getUser();
+            const userEmail = userRes.user?.email ?? null;
+
+            if (!userEmail) {
+                window.location.assign("/admin/login");
+                return;
+            }
+
+            const { data } = await supabase
+                .from("admins")
+                .select("email")
+                .eq("email", userEmail)
+                .maybeSingle();
+
+            if (!data) {
+                window.location.assign("/admin/login");
+                return;
+            }
+
+            setIsAdmin(true);
+        }
+
+        checkAdmin();
+        if (!setIsAdmin) return;
+
         let cancelled = false;
 
         async function load() {
