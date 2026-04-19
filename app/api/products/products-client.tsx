@@ -215,7 +215,7 @@ export default function ProductsClient() {
 
         const fallback: Product[] = [
           {
-            id: 100001,
+            id: "900001",
             title: "Thriller",
             artist: "Michael Jackson",
             description: "Pop legend. Full of hits.",
@@ -226,7 +226,7 @@ export default function ProductsClient() {
             category: "Vinyl",
           },
           {
-            id: 100002,
+            id: "900002",
             title: "After Hours",
             artist: "The Weeknd",
             description: "Modern classic. Dark, cinematic, iconic.",

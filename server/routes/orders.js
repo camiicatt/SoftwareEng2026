@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require("../../database/db.js");
 const { createClient } = require("@supabase/supabase-js");
 
-const TAX_RATE = 0.08; // 8% tax
+const TAX_RATE = 0.0825;
 
 function calculateOrderTotal(items, discountPercent = 0) {
     const subtotal = items.reduce((sum, item) => {
