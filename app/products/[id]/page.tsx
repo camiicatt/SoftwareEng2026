@@ -12,6 +12,7 @@ type DbProduct = {
   artist: string;
   description: string | null;
   price: number;
+  sale_price: number | null;
   quantity: number;
   image_url: string | null;
   category: string | null;
@@ -44,7 +45,7 @@ export default async function ProductDetailPage({
 
   const { data, error } = await supabase
     .from("products")
-    .select("id,name,artist,description,price,quantity,image_url,category,genre,created_at")
+    .select("id,name,artist,description,price,sale_price,quantity,image_url,category,genre,created_at")
     .eq("id", idNum)
     .single();
 
@@ -175,9 +176,24 @@ export default async function ProductDetailPage({
               ) : null}
             </div>
 
+            {/* update to show sale price when sale price is not null */}
             <div className="shrink-0 rounded-2xl border-2 border-black bg-[#00BFA6] px-5 py-3 text-white shadow-[3px_3px_0_0_#000]">
               <div className="text-xs font-black uppercase opacity-90">Price</div>
-              <div className="text-2xl font-black">{money(p.price)}</div>
+
+              {p.sale_price ? (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-bold line-through opacity-70">
+                    {money(p.price)}
+                  </span>
+                  <span className="text-2xl font-black">
+                    {money(p.sale_price)}
+                  </span>
+                </div>
+              ) : (
+                <div className="text-2xl font-black">
+                  {money(p.price)}
+                </div>
+              )}
             </div>
           </div>
 
@@ -186,16 +202,16 @@ export default async function ProductDetailPage({
             <div className="flex-1">
               <AddToCartButton
                 product={{
-                    id: p.id,
-                    title: p.name,
-                    artist: p.artist,
-                    description: desc,
-                    price: p.price,
-                    quantity: p.quantity,
-                    image_url: p.image_url ?? "",
-                    category: p.category ?? "Vinyl",
+                  id: p.id,
+                  title: p.name,
+                  artist: p.artist,
+                  description: desc,
+                  price: p.price,
+                  quantity: p.quantity,
+                  image_url: p.image_url ?? "",
+                  category: p.category ?? "Vinyl",
                 }}
-                />
+              />
             </div>
 
             <Link
