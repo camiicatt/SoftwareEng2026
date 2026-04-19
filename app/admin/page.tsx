@@ -275,6 +275,12 @@ export default function AdminDashboard() {
             >
               View Orders
             </Link>
+            <Link
+              href="/admin/products"
+              className="border-2 border-black bg-[#D99A73] px-4 py-2 text-xs font-black uppercase tracking-widest text-black shadow-[4px_4px_0_0_#000] transition-all hover:-translate-y-0.5"
+            >
+              Edit Products
+            </Link>
           </div>
         </div>
       </div>

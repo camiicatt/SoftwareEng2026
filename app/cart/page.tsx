@@ -93,14 +93,18 @@ export default function CartPage() {
 
     useEffect(() => {
         if (cartItems.length === 0) {
-            setTotals(null);
-            return;
+          setTotals(null);
+          return;
         }
+      
+        const timer = setTimeout(() => {
+          calculateTotals();
+        }, 300);
+      
+        return () => clearTimeout(timer);
+      }, [cartItems, discountCode]);
 
-        calculateTotals();
-    }, [cartItems]);
-
-    async function placeOrder() {
+      async function placeOrder() {
         if (orderItems.length === 0) return;
       
         setPlacingOrder(true);
@@ -122,8 +126,8 @@ export default function CartPage() {
             .from("orders")
             .insert({
               user_id: user.id,
-              total_price: subtotal,
-              tax: subtotal * 0.08, // simple tax example
+              total_price: displayedTotal,
+              tax: displayedTax,
               status: "pending",
             })
             .select()
@@ -145,10 +149,50 @@ export default function CartPage() {
       
           if (itemsError) throw itemsError;
       
+          // 3. Read current product quantities
+          const productIds = orderItems.map((item) => item.product_id);
+      
+          const { data: productRows, error: productFetchError } = await supabase
+            .from("products")
+            .select("id, quantity")
+            .in("id", productIds);
+      
+          if (productFetchError) throw productFetchError;
+      
+          // 4. Build quantity updates
+          const quantityMap = new Map<number, number>(
+            (productRows ?? []).map((p: any) => [Number(p.id), Number(p.quantity ?? 0)])
+          );
+      
+          for (const item of orderItems) {
+            const currentQty = quantityMap.get(item.product_id);
+      
+            if (currentQty === undefined) {
+              throw new Error(`Product ${item.product_id} not found.`);
+            }
+      
+            if (currentQty < item.quantity) {
+              throw new Error(`Not enough stock for product ${item.product_id}.`);
+            }
+          }
+      
+          for (const item of orderItems) {
+            const currentQty = quantityMap.get(item.product_id)!;
+            const newQty = currentQty - item.quantity;
+      
+            const { error: updateError } = await supabase
+              .from("products")
+              .update({ quantity: newQty })
+              .eq("id", item.product_id);
+      
+            if (updateError) throw updateError;
+          }
+      
           setSuccessMessage("Order placed successfully!");
           clearCart();
+          setTotals(null);
         } catch (err: any) {
-          setError(err.message);
+          setError(err?.message || "Failed to place order.");
         } finally {
           setPlacingOrder(false);
         }
