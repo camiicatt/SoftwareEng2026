@@ -27,6 +27,21 @@ export default function CartPage() {
     const [placingOrder, setPlacingOrder] = useState(false);
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
+    const [placedOrderSummary, setPlacedOrderSummary] = useState<{
+        itemCount: number;
+        subtotal: number;
+        tax: number;
+        total: number;
+        discountCode: string | null;
+        items: {
+            id: number;
+            title: string;
+            artist: string;
+            image_url?: string | null;
+            quantity: number;
+            price: number;
+        }[];
+    } | null>(null);
 
     const orderItems = useMemo(
         () =>
@@ -128,6 +143,7 @@ export default function CartPage() {
               user_id: user.id,
               total_price: displayedTotal,
               tax: displayedTax,
+                discount_code: discountCode.trim() || null,
               status: "pending",
             })
             .select()
@@ -187,10 +203,27 @@ export default function CartPage() {
       
             if (updateError) throw updateError;
           }
-      
-          setSuccessMessage("Order placed successfully!");
-          clearCart();
-          setTotals(null);
+
+            setPlacedOrderSummary({
+                itemCount: cartItems.reduce((sum, item) => sum + item.cartQuantity, 0),
+                subtotal: displayedSubtotal,
+                tax: displayedTax,
+                total: displayedTotal,
+                discountCode: discountCode || null,
+                items: cartItems.map((item) => ({
+                    id: item.id,
+                    title: item.title,
+                    artist: item.artist,
+                    image_url: item.image_url,
+                    quantity: item.cartQuantity,
+                    price: item.price,
+                })),
+            });
+
+            setSuccessMessage("Order placed successfully!");
+            clearCart();
+            setTotals(null);
+
         } catch (err: any) {
           setError(err?.message || "Failed to place order.");
         } finally {
@@ -218,8 +251,45 @@ export default function CartPage() {
         <div className="mt-6 border-4 border-black bg-white p-6 shadow-[6px_6px_0_0_#000]">
           <p className="font-bold">Your cart is empty.</p>
             {successMessage && (
-                <div className="mt-4 border-4 border-green-700 bg-green-100 p-3 font-bold text-green-800 shadow-[4px_4px_0_0_#166534]">
-                    {successMessage}
+                <div className="mt-4 border-4 border-green-700 bg-green-100 p-4 font-bold text-green-800 shadow-[4px_4px_0_0_#166534]">
+                    <div>{successMessage}</div>
+
+                    {placedOrderSummary && (
+                        <div className="mt-4 border-t-2 border-green-700 pt-4 text-sm font-normal text-black">
+                            <h3 className="mb-3 text-lg font-black uppercase text-green-800">
+                                Order Summary
+                            </h3>
+
+                            <div className="mb-4 space-y-2">
+                                <div><span className="font-black">Items:</span> {placedOrderSummary.itemCount}</div>
+                                <div><span className="font-black">Subtotal:</span> {money(placedOrderSummary.subtotal)}</div>
+                                <div><span className="font-black">Tax:</span> {money(placedOrderSummary.tax)}</div>
+                                <div><span className="font-black">Discount Code:</span> {placedOrderSummary.discountCode || "None"}</div>
+                                <div><span className="font-black">Total:</span> {money(placedOrderSummary.total)}</div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {placedOrderSummary.items.map((item) => (
+                                    <div key={item.id} className="grid grid-cols-[70px_1fr] gap-3 border-2 border-green-700 bg-white p-3">
+                                        <div className="overflow-hidden border-2 border-black bg-neutral-100">
+                                            {item.image_url ? (
+                                                <img src={item.image_url} className="h-[70px] w-full object-cover" />
+                                            ) : (
+                                                <div className="flex h-[70px] items-center justify-center text-[10px] font-black">No cover</div>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <div className="font-black uppercase">{item.title}</div>
+                                            <div className="text-xs opacity-70">{item.artist}</div>
+                                            <div className="text-xs"><span className="font-black">Qty:</span> {item.quantity}</div>
+                                            <div className="text-xs"><span className="font-black">Price:</span> {money(item.price)}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
