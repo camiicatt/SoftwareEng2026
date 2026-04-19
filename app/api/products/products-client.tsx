@@ -7,7 +7,7 @@ import Link from "next/link";
 type RawProduct = any;
 
 type Product = {
-  id: string;
+  id: number;
   title: string;
   artist: string;
   description: string;
@@ -20,7 +20,7 @@ type Product = {
 
 function normalizeProduct(p: RawProduct): Product {
   return {
-    id: String(p.id ?? p.product_id),
+    id: Number(p.id ?? p.product_id),
     title: String(p.title ?? p.name ?? p.product_name ?? "Untitled"),
     artist: String(p.artist ?? p.brand ?? p.maker ?? "Unknown Artist"),
     description: String(p.description ?? p.desc ?? ""),
@@ -215,7 +215,7 @@ export default function ProductsClient() {
 
         const fallback: Product[] = [
           {
-            id: "900001",
+            id: 999,
             title: "Thriller",
             artist: "Michael Jackson",
             description: "Pop legend. Full of hits.",
@@ -226,7 +226,7 @@ export default function ProductsClient() {
             category: "Vinyl",
           },
           {
-            id: "900002",
+            id: 888,
             title: "After Hours",
             artist: "The Weeknd",
             description: "Modern classic. Dark, cinematic, iconic.",
