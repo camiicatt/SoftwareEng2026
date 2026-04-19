@@ -363,6 +363,20 @@ export default function AdminOrdersPage() {
                                                 if (!confirmed) return;
                                             }
 
+                                            if (s === "cancelled") {
+                                                const confirmed = window.confirm(
+                                                    "Cancelling this order may restock items. Continue?"
+                                                );
+                                                if (!confirmed) return;
+                                            }
+
+                                            if (s === "pending") {
+                                                const confirmed = window.confirm(
+                                                    "Changing this order back to pending will undo completion. Continue?"
+                                                );
+                                                if (!confirmed) return;
+                                            }
+
                                             updateStatus(order.id, s);
                                         }}
                                         className={`text-xs font-black uppercase border-2 border-black px-2 py-1 ${order.status === s ? "bg-black text-white" : "bg-white"
