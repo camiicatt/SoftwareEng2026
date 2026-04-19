@@ -7,7 +7,7 @@ import Link from "next/link";
 type RawProduct = any;
 
 type Product = {
-  id: number;
+  id: string;
   title: string;
   artist: string;
   description: string;
@@ -20,7 +20,7 @@ type Product = {
 
 function normalizeProduct(p: RawProduct): Product {
   return {
-    id: Number(p.id ?? p.product_id),
+    id: String(p.id ?? p.product_id),
     title: String(p.title ?? p.name ?? p.product_name ?? "Untitled"),
     artist: String(p.artist ?? p.brand ?? p.maker ?? "Unknown Artist"),
     description: String(p.description ?? p.desc ?? ""),
