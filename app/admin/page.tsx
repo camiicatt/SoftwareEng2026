@@ -64,6 +64,11 @@ export default function AdminDashboard() {
   const [discountExpiry, setDiscountExpiry] = useState("");
   const [discountStatus, setDiscountStatus] = useState("");
   const [discountCodes, setDiscountCodes] = useState<any[]>([]);
+  const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
+  const [editPrice, setEditPrice] = useState("");
+  const [editQuantity, setEditQuantity] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editStatus, setEditStatus] = useState("");
 
   const [imageUrl, setImageUrl] = useState("");
 
@@ -117,6 +122,27 @@ export default function AdminDashboard() {
     setDiscountPercent("");
     setDiscountExpiry("");
     await loadDiscountCodes();
+  }
+  async function deleteProduct(id: number) {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    await supabase.from("products").delete().eq("id", id);
+    await loadRecent();
+  }
+
+  async function saveEditProduct() {
+    if (!editingProduct) return;
+    const updates: any = {};
+    if (editPrice !== "") updates.price = Number(editPrice);
+    if (editQuantity !== "") updates.quantity = Number(editQuantity);
+    if (editDescription !== "") updates.description = editDescription;
+
+    await supabase.from("products").update(updates).eq("id", Number(editingProduct.id));
+    setEditingProduct(null);
+    setEditPrice("");
+    setEditQuantity("");
+    setEditDescription("");
+    setEditStatus(":D Product updated!");
+    await loadRecent();
   }
 
   async function toggleDiscountCode(code: string, currentlyActive: boolean) {
@@ -278,7 +304,56 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-
+    {/* edit product modal */}
+{editingProduct && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white border-4 border-black p-6 w-full max-w-md space-y-4 shadow-[8px_8px_0_0_#000]">
+      <h2 className="text-lg font-black uppercase">Edit: {editingProduct.name}</h2>
+      <div className="space-y-1">
+        <div className="text-xs font-black uppercase">Price</div>
+        <input
+          className="w-full border-2 border-black p-2"
+          placeholder={String(editingProduct.price ?? "")}
+          value={editPrice}
+          onChange={(e) => setEditPrice(e.target.value)}
+        />
+      </div>
+      <div className="space-y-1">
+        <div className="text-xs font-black uppercase">Quantity</div>
+        <input
+          className="w-full border-2 border-black p-2"
+          placeholder={String(editingProduct.quantity ?? "")}
+          value={editQuantity}
+          onChange={(e) => setEditQuantity(e.target.value)}
+        />
+      </div>
+      <div className="space-y-1">
+        <div className="text-xs font-black uppercase">Description</div>
+        <textarea
+          className="w-full border-2 border-black p-2"
+          placeholder={editingProduct.description ?? ""}
+          value={editDescription}
+          onChange={(e) => setEditDescription(e.target.value)}
+        />
+      </div>
+      {editStatus && <div className="text-sm font-semibold">{editStatus}</div>}
+      <div className="flex gap-3">
+        <button
+          onClick={saveEditProduct}
+          className="border-2 border-black bg-black text-white px-4 py-2 text-xs font-black uppercase"
+        >
+          Save
+        </button>
+        <button
+          onClick={() => { setEditingProduct(null); setEditStatus(""); }}
+          className="border-2 border-black bg-white px-4 py-2 text-xs font-black uppercase"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       <div className="grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-8">
           <div className="border-4 border-black bg-[#CFE8F3] p-6 shadow-[8px_8px_0_0_#000]">
@@ -601,6 +676,20 @@ export default function AdminDashboard() {
                   <div className="mt-3 text-lg font-black">
                     ${Number(p.price ?? 0).toFixed(2)}
                   </div>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => setEditingProduct(p)}
+                        className="border-2 border-black bg-black text-white px-3 py-1 text-xs font-black uppercase"
+                      >
+                       Edit
+                    </button>
+                    <button
+                      onClick={() => deleteProduct(Number(p.id))}
+                  className="border-2 border-black bg-red-500 text-white px-3 py-1 text-xs font-black uppercase"
+                >
+            Delete
+          </button>
+            </div>
                 </div>
               ))}
             </div>
