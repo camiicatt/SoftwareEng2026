@@ -12,6 +12,7 @@ type Product = {
   artist: string;
   description: string;
   price: number;
+  sale_price: number | null;
   quantity: number;
   image_url: string;
   category: string;
@@ -19,11 +20,15 @@ type Product = {
 
 function normalizeProduct(p: RawProduct): Product {
   return {
-    id: p.id ?? p.product_id ?? p.uuid ?? crypto.randomUUID(),
+    id: Number(p.id ?? p.product_id),
     title: String(p.title ?? p.name ?? p.product_name ?? "Untitled"),
     artist: String(p.artist ?? p.brand ?? p.maker ?? "Unknown Artist"),
     description: String(p.description ?? p.desc ?? ""),
     price: Number(p.price ?? p.cost ?? 0),
+    sale_price:
+      p.sale_price === null || p.sale_price === undefined || p.sale_price === ""
+        ? null
+        : Number(p.sale_price),
     quantity: Number(p.quantity ?? p.stock ?? p.qty ?? 0),
     image_url: String(p.image_url ?? p.image ?? p.cover_url ?? ""),
     category: String(p.category ?? p.type ?? "Vinyl"),
@@ -33,6 +38,14 @@ function normalizeProduct(p: RawProduct): Product {
 function money(n: number) {
   const safe = Number.isFinite(n) ? n : 0;
   return `$${safe.toFixed(2)}`;
+}
+
+function isOnSale(p: Product) {
+  return (
+    p.sale_price !== null &&
+    Number.isFinite(p.sale_price) &&
+    p.sale_price < p.price
+  );
 }
 
 function badgeText(qty: number) {
@@ -100,8 +113,21 @@ function ProductCard({
             <p className="truncate text-sm font-bold text-black/75">{p.artist}</p>
           </div>
 
-          <div className="shrink-0 border-2 border-black bg-[#F2D23C] px-3 py-1 text-sm font-black text-black shadow-[3px_3px_0_0_#000]">
-            {money(p.price)}
+          <div className="shrink-0 text-right">
+            {isOnSale(p) ? (
+              <div className="space-y-1">
+                <div className="border-2 border-black bg-[#FF8A80] px-3 py-1 text-sm font-black text-black shadow-[3px_3px_0_0_#000]">
+                  {money(p.sale_price!)}
+                </div>
+                <div className="text-xs font-black text-black/50 line-through">
+                  {money(p.price)}
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-black bg-[#F2D23C] px-3 py-1 text-sm font-black text-black shadow-[3px_3px_0_0_#000]">
+                {money(p.price)}
+              </div>
+            )}
           </div>
         </div>
 
@@ -113,6 +139,12 @@ function ProductCard({
           <span className="border-2 border-black bg-[#FFD6A5] px-2 py-1 text-[11px] font-black uppercase">
             {p.category}
           </span>
+
+          {isOnSale(p) && (
+            <span className="border-2 border-black bg-[#FF8A80] px-2 py-1 text-[11px] font-black uppercase">
+              On Sale
+            </span>
+          )}
 
           <span className="ml-auto text-xs font-black uppercase text-black/75">
             Qty {p.quantity}
@@ -183,21 +215,23 @@ export default function ProductsClient() {
 
         const fallback: Product[] = [
           {
-            id: 1,
+            id: 100001,
             title: "Thriller",
             artist: "Michael Jackson",
             description: "Pop legend. Full of hits.",
             price: 29.99,
+            sale_price: null,
             quantity: 7,
             image_url: "/covers/thriller.jpg",
             category: "Vinyl",
           },
           {
-            id: 1,
+            id: 100002,
             title: "After Hours",
             artist: "The Weeknd",
             description: "Modern classic. Dark, cinematic, iconic.",
             price: 28.5,
+            sale_price: 22.99,
             quantity: 5,
             image_url: "/covers/after-hours.jpg",
             category: "Vinyl",
@@ -216,9 +250,21 @@ export default function ProductsClient() {
         if (category !== "All") out = out.filter((p) => p.category === category);
         if (inStockOnly) out = out.filter((p) => p.quantity > 0);
 
-        if (sort === "price_desc") out.sort((a, b) => b.price - a.price);
-        else if (sort === "price_asc") out.sort((a, b) => a.price - b.price);
-        else out.sort((a, b) => b.quantity - a.quantity);
+        if (sort === "price_desc") {
+          out.sort((a, b) => {
+            const aPrice = isOnSale(a) ? a.sale_price! : a.price;
+            const bPrice = isOnSale(b) ? b.sale_price! : b.price;
+            return bPrice - aPrice;
+          });
+        } else if (sort === "price_asc") {
+          out.sort((a, b) => {
+            const aPrice = isOnSale(a) ? a.sale_price! : a.price;
+            const bPrice = isOnSale(b) ? b.sale_price! : b.price;
+            return aPrice - bPrice;
+          });
+        } else {
+          out.sort((a, b) => b.quantity - a.quantity);
+        }
 
         if (!cancelled) setItems(out);
       } catch (e: any) {
@@ -232,6 +278,7 @@ export default function ProductsClient() {
     }
 
     load();
+
     return () => {
       cancelled = true;
     };
@@ -280,7 +327,7 @@ export default function ProductsClient() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <select
                   value={sort}
-                  onChange={(e) => setSort(e.target.value as any)}
+                  onChange={(e) => setSort(e.target.value as "price_asc" | "price_desc" | "stock_desc")}
                   className="border-2 border-black bg-white px-3 py-3 text-sm font-black uppercase text-black outline-none shadow-[4px_4px_0_0_#000]"
                 >
                   <option value="stock_desc">Availability</option>

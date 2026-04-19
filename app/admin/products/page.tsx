@@ -8,30 +8,34 @@ import GenericToast from "@/app/components/GenericToast";
 type RawProduct = any;
 
 type Product = {
-    id: number | string;
+    id: number;
     name: string;
     artist: string;
     description: string;
     price: number;
+    sale_price: number | null;
     quantity: number;
     image_url: string;
     category: string;
     genre: string;
 };
-
 const productCategories = ["Vinyl", "CD"] as const;
 
 function normalizeProduct(p: RawProduct): Product {
     return {
-        id: p.id ?? p.product_id ?? p.uuid ?? crypto.randomUUID(),
+        id: Number(p.id ?? p.product_id),
         name: String(p.title ?? p.name ?? "Untitled"),
         artist: String(p.artist ?? "Unknown Artist"),
         description: String(p.description ?? ""),
         price: Number(p.price ?? 0),
+        sale_price:
+            p.sale_price === null || p.sale_price === undefined || p.sale_price === ""
+                ? null
+                : Number(p.sale_price),
         quantity: Number(p.quantity ?? 0),
         image_url: String(p.image_url ?? ""),
         category: String(p.category ?? "Vinyl"),
-        genre: String(p.genre ?? "Unknown")
+        genre: String(p.genre ?? "Unknown"),
     };
 }
 
@@ -49,6 +53,10 @@ function badgeStyle(qty: number) {
 
 function money(n: number) {
     return `$${Number.isFinite(n) ? n.toFixed(2) : "0.00"}`;
+}
+
+function isOnSale(p: Product) {
+    return p.sale_price !== null && Number.isFinite(p.sale_price) && p.sale_price < p.price;
 }
 
 /* ---------------------- Product Card --------------------- */
@@ -70,8 +78,21 @@ function ProductCard({
             />
             <div className="mt-2 font-black text-sm">{p.name}</div>
             <div className="text-xs font-semibold text-neutral-700">{p.artist}</div>
-            <div className="mt-1 text-xs font-bold text-neutral-900">
-                {money(p.price)}
+            <div className="mt-1">
+                {isOnSale(p) ? (
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-red-600">
+                            {money(p.sale_price!)}
+                        </span>
+                        <span className="text-xs font-bold text-neutral-500 line-through">
+                            {money(p.price)}
+                        </span>
+                    </div>
+                ) : (
+                    <div className="text-xs font-bold text-neutral-900">
+                        {money(p.price)}
+                    </div>
+                )}
             </div>
 
             <button
@@ -127,8 +148,21 @@ function Preview({ p }: { p: Product | null }) {
                         </p>
                     </div>
 
-                    <div className="border-2 border-black bg-[#F2D23C] px-3 py-1 text-sm font-black">
-                        {money(p.price)}
+                    <div className="flex flex-col items-end gap-1">
+                        {isOnSale(p) ? (
+                            <>
+                                <div className="border-2 border-black bg-[#FF8A80] px-3 py-1 text-sm font-black">
+                                    {money(p.sale_price!)}
+                                </div>
+                                <div className="text-xs font-black text-black/50 line-through">
+                                    {money(p.price)}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="border-2 border-black bg-[#F2D23C] px-3 py-1 text-sm font-black">
+                                {money(p.price)}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -168,7 +202,18 @@ function validate(p: Product) {
 
     if (!p.genre.trim()) newErrors.genre = "Genre is required";
 
-    if (!p.image_url.trim()) newErrors.image_url = "Cover image is required"
+    if (!p.image_url.trim()) newErrors.image_url = "Cover image is required";
+
+    if (p.sale_price !== null) {
+        const sale = Number(p.sale_price);
+        const price = Number(p.price);
+
+        if (!Number.isFinite(sale) || sale < 0) {
+            newErrors.sale_price = "Sale price must be 0 or more";
+        } else if (sale >= price) {
+            newErrors.sale_price = "Sale price must be less than regular price";
+        }
+    }
 
     return newErrors;
 }
@@ -255,28 +300,29 @@ function EditForm({
                 </div>
 
                 {/* Price + qty + category */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-black uppercase tracking-widest text-black/80">
-                            Price
-                        </label>
-                        <input
-                            className="w-full border-2 border-black bg-white px-3 py-2.5 font-semibold outline-none"
-                            inputMode="decimal"
-                            value={product.price}
-                            onChange={(e) =>
-                                setProduct({
-                                    ...product,
-                                    price: e.target.value,
-                                } as any)
-                            }
-                        />
-                        {errors.price && (
-                            <p className="text-xs text-red-600 font-bold">
-                                {errors.price}
-                            </p>
-                        )}
-                    </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                <div className="space-y-1.5">
+                    <label className="text-xs font-black uppercase tracking-widest text-black/80">
+                        Sale Price
+                    </label>
+                    <input
+                        className="w-full border-2 border-black bg-white px-3 py-2.5 font-semibold outline-none"
+                        inputMode="decimal"
+                        placeholder="Leave blank for no sale"
+                        value={product.sale_price ?? ""}
+                        onChange={(e) =>
+                            setProduct({
+                                ...product,
+                                sale_price: e.target.value === "" ? null : Number(e.target.value),
+                            })
+                        }
+                    />
+                    {errors.sale_price && (
+                        <p className="text-xs text-red-600 font-bold">
+                            {errors.sale_price}
+                        </p>
+                    )}
+                </div>
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-black uppercase tracking-widest text-black/80">
